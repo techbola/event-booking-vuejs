@@ -1,9 +1,11 @@
 <template>
   <SectionCard>
-    <div>
-      {{ title }}
+    <div class="flex justify-between">
+      <div>{{ title }}</div>
+      <RoundButton @click="$emit('cancel')" variant="danger">
+        Cancel
+      </RoundButton>
     </div>
-    <RoundButton @click="$emit('cancel')"> Cancel </RoundButton>
   </SectionCard>
 </template>
 
