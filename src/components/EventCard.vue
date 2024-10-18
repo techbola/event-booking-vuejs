@@ -1,19 +1,31 @@
 <template>
-  <div class="border border-gray-200 bg-white rounded-md">
-    <h3 class="p-4 font-medium text-xl border-b border-gray-200">
+  <SectionCard>
+    <template #header>
       {{ title }}
-    </h3>
-    <p class="p-4 border-b border-gray-200">{{ eventDate }}</p>
-    <p class="p-4">{{ description }}</p>
-  </div>
+    </template>
+
+    <div class="space-y-2">
+      <p class="text-sm">{{ eventDate }}</p>
+      <p>{{ description }}</p>
+    </div>
+
+    <template #footer>
+      <div class="flex justify-end p-4">
+        <RoundButton @click="$emit('register')"> Register </RoundButton>
+      </div>
+    </template>
+  </SectionCard>
 </template>
 
 <script setup>
+import SectionCard from '@/components/SectionCard.vue'
+import RoundButton from '@/components/RoundButton.vue'
+
 defineProps({
   title: String,
   eventDate: String,
   description: String,
 })
-</script>
 
-<style lang="scss" scoped></style>
+defineEmits(['register'])
+</script>
