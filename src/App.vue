@@ -3,17 +3,21 @@
     <h1 class="text-4xl font-medium">Event Booking App</h1>
 
     <h2 class="text-2xl font-medium">All Events</h2>
-    <section class="grid grid-cols-2 gap-8" v-if="!loading">
-      <EventCard
-        v-for="event in events"
-        :key="event"
-        :title="event.title"
-        :event-date="event.date"
-        :description="event.description"
-        @register="handleEventRegistration"
-      />
+    <section class="grid grid-cols-2 gap-8">
+      <template v-if="!loading">
+        <EventCard
+          v-for="event in events"
+          :key="event"
+          :title="event.title"
+          :event-date="event.date"
+          :description="event.description"
+          @register="handleEventRegistration"
+        />
+      </template>
+      <template v-else>
+        <LoadingEventCard v-for="i in 4" :key="i" />
+      </template>
     </section>
-    <section v-else>Loading events...</section>
 
     <h2 class="text-2xl font-medium">Your Bookings</h2>
     <section class="grid grid-cols-1 gap-8">
@@ -31,6 +35,7 @@
 import { ref, onMounted } from 'vue'
 import EventCard from '@/components/EventCard.vue'
 import BookingItem from '@/components/BookingItem.vue'
+import LoadingEventCard from '@/components/LoadingEventCard.vue'
 
 const events = ref([])
 const loading = ref(false)
