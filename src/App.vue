@@ -3,11 +3,11 @@
     <h1 class="text-4xl font-medium">Event Booking App</h1>
 
     <h2 class="text-2xl font-medium">All Events</h2>
-    <EventList @register="handleEventRegistration($event)" />
+    <EventList />
 
     <h2 class="text-2xl font-medium">Your Bookings</h2>
     <section class="grid grid-cols-1 gap-8">
-      <template v-if="!bookingsLoading">
+      <template v-if="!loading">
         <BookingItem
           v-for="booking in bookings"
           :key="booking.id"
@@ -24,109 +24,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onMounted } from 'vue'
 
 import EventList from '@/components/EventList.vue'
 import BookingItem from '@/components/BookingItem.vue'
 import LoadingBookingItem from '@/components/LoadingBookingItem.vue'
 
-// TODO: Replace with user id after auth
-const userId = 1
-const bookings = ref([])
-const bookingsLoading = ref(false)
+import useBookings from '@/composables/useBookings'
 
-const fetchBookings = async () => {
-  bookingsLoading.value = true
-  try {
-    const response = await fetch('http://localhost:3001/bookings')
-    const data = await response.json()
-    bookings.value = data
-  } catch (error) {
-    console.error(error)
-  } finally {
-    bookingsLoading.value = false
-  }
-}
+const { bookings, loading, fetchBookings, handleEventCancellation } =
+  useBookings()
 
 onMounted(() => {
   fetchBookings()
 })
-
-const findBookingIndex = id => {
-  return bookings.value.findIndex(booking => booking.id === id)
-}
-
-const handleEventRegistration = async event => {
-  if (
-    bookings.value.some(booking => booking.eventId === event.id && userId === 1)
-  ) {
-    alert('You have already registered for this event')
-    return
-  }
-
-  const newBooking = {
-    id: Date.now().toString(),
-    userId: '1',
-    eventId: event.id,
-    eventTitle: event.title,
-    status: 'pending',
-  }
-
-  bookings.value.push(newBooking)
-
-  try {
-    const response = await fetch('http://localhost:3001/bookings', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...newBooking,
-        status: 'confirmed',
-      }),
-    })
-
-    if (response.ok) {
-      const index = findBookingIndex(newBooking.id)
-      bookings.value[index] = await response.json()
-    } else {
-      throw new Error('Failed to register event')
-    }
-  } catch (error) {
-    console.error(error)
-    bookings.value = bookings.value.filter(
-      booking => booking.id !== newBooking.id,
-    )
-  }
-}
-
-const handleEventCancellation = async bookingId => {
-  if (!window.confirm('Are you sure you want to cancel this booking?')) {
-    return
-  }
-
-  const index = findBookingIndex(bookingId)
-  const originalBooking = bookings.value[index]
-  bookings.value.splice(index, 1)
-  // bookings.value = bookings.value.filter(booking => booking.id !== bookingId) // another way to remove the booking
-
-  try {
-    const response = await fetch(
-      `http://localhost:3001/bookings/${bookingId}`,
-      {
-        method: 'DELETE',
-      },
-    )
-
-    if (!response.ok) {
-      throw new Error('Booking could not be cancelled.')
-    }
-  } catch (error) {
-    console.error(error)
-    bookings.value.splice(index, 0, originalBooking)
-    // bookings.value = [...bookings.value, originalBooking] // another way to restore (add) the booking back
-  }
-}
 </script>
 
 <style scoped></style>
