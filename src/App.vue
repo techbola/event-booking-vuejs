@@ -26,6 +26,7 @@
           v-for="booking in bookings"
           :key="booking.id"
           :title="booking.eventTitle"
+          :status="booking.status"
           @cancel="handleEventCancellation(booking.id)"
         />
       </template>
@@ -42,6 +43,9 @@ import EventCard from '@/components/EventCard.vue'
 import BookingItem from '@/components/BookingItem.vue'
 import LoadingEventCard from '@/components/LoadingEventCard.vue'
 import LoadingBookingItem from '@/components/LoadingBookingItem.vue'
+
+// TODO: Replace with user id after auth
+const userId = 1
 
 const events = ref([])
 const loading = ref(false)
@@ -79,16 +83,29 @@ onMounted(() => {
   fetchBookings()
 })
 
+const findBookingIndex = id => {
+  return bookings.value.findIndex(booking => booking.id === id)
+}
+
 const handleEventRegistration = async event => {
+  if (
+    bookings.value.some(booking => booking.eventId === event.id && userId === 1)
+  ) {
+    alert('You have already registered for this event')
+    return
+  }
+
   const newBooking = {
     id: Date.now().toString(),
     userId: '1',
     eventId: event.id,
     eventTitle: event.title,
+    status: 'pending',
   }
 
+  bookings.value.push(newBooking)
+
   try {
-    bookingsLoading.value = true
     const response = await fetch('http://localhost:3001/bookings', {
       method: 'POST',
       headers: {
@@ -100,27 +117,45 @@ const handleEventRegistration = async event => {
       }),
     })
 
-    const data = await response.json()
-    bookings.value.push(data)
+    if (response.ok) {
+      const index = findBookingIndex(newBooking.id)
+      bookings.value[index] = await response.json()
+    } else {
+      throw new Error('Failed to register event')
+    }
   } catch (error) {
     console.error(error)
-  } finally {
-    bookingsLoading.value = false
+    bookings.value = bookings.value.filter(
+      booking => booking.id !== newBooking.id,
+    )
   }
 }
 
 const handleEventCancellation = async bookingId => {
-  try {
-    bookingsLoading.value = true
-    await fetch(`http://localhost:3001/bookings/${bookingId}`, {
-      method: 'DELETE',
-    })
+  if (!window.confirm('Are you sure you want to cancel this booking?')) {
+    return
+  }
 
-    bookings.value = bookings.value.filter(booking => booking.id !== bookingId)
+  const index = findBookingIndex(bookingId)
+  const originalBooking = bookings.value[index]
+  bookings.value.splice(index, 1)
+  // bookings.value = bookings.value.filter(booking => booking.id !== bookingId) // another way to remove the booking
+
+  try {
+    const response = await fetch(
+      `http://localhost:3001/bookings/${bookingId}`,
+      {
+        method: 'DELETE',
+      },
+    )
+
+    if (!response.ok) {
+      throw new Error('Booking could not be cancelled.')
+    }
   } catch (error) {
     console.error(error)
-  } finally {
-    bookingsLoading.value = false
+    bookings.value.splice(index, 0, originalBooking)
+    // bookings.value = [...bookings.value, originalBooking] // another way to restore (add) the booking back
   }
 }
 </script>
