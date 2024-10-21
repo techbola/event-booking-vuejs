@@ -1,13 +1,8 @@
 <template>
-  <template v-if="error">
-    <SectionCard>
-      <div class="space-y-4 flex flex-col items-center">
-        <div class="text-red-500">{{ error }}</div>
-        <div>
-          <RoundButton @click="fetchEvents"> Retry now </RoundButton>
-        </div>
-      </div>
-    </SectionCard>
+  <template v-if="errorMessage">
+    <ErrorCard :retry="fetchEvents">
+      <div>{{ errorMessage }}</div>
+    </ErrorCard>
   </template>
   <template v-else>
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -38,8 +33,7 @@ import { ref, onMounted } from 'vue'
 
 import EventCard from '@/components/EventCard.vue'
 import LoadingEventCard from '@/components/LoadingEventCard.vue'
-import SectionCard from '@/components/SectionCard.vue'
-import RoundButton from '@/components/RoundButton.vue'
+import ErrorCard from '@/components/ErrorCard.vue'
 
 import useBookings from '@/composables/useBookings'
 
@@ -47,24 +41,24 @@ const { handleEventRegistration } = useBookings()
 
 const events = ref([])
 const loading = ref(false)
-const error = ref(null)
+const errorMessage = ref('')
 
 const fetchEvents = async () => {
   loading.value = true
-  error.value = null
+  errorMessage.value = ''
 
   try {
     const response = await fetch('http://localhost:3001/events')
 
     if (!response.ok) {
-      error.value = 'Could not fetch events.'
+      errorMessage.value = 'Could not fetch events.'
+      throw new Error(errorMessage.value)
     } else {
       const data = await response.json()
       events.value = data
     }
   } catch (error) {
-    console.error(error)
-    error.value = error
+    errorMessage.value = error.message
   } finally {
     loading.value = false
   }

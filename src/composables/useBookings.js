@@ -4,15 +4,23 @@ import { ref, onMounted } from 'vue'
 const userId = 1
 const bookings = ref([])
 const loading = ref(false)
+const errorMessage = ref('')
 
 const fetchBookings = async () => {
   loading.value = true
+  errorMessage.value = ''
+
   try {
     const response = await fetch('http://localhost:3001/bookings')
-    const data = await response.json()
-    bookings.value = data
+    if (!response.ok) {
+      errorMessage.value = 'Could not fetch events.'
+      throw new Error(errorMessage.value)
+    } else {
+      const data = await response.json()
+      bookings.value = data
+    }
   } catch (error) {
-    console.error(error)
+    errorMessage.value = error.message
   } finally {
     loading.value = false
   }
@@ -100,6 +108,7 @@ export default function useBookings() {
   return {
     bookings,
     loading,
+    errorMessage,
     fetchBookings,
     handleEventRegistration,
     handleEventCancellation,
